@@ -1,0 +1,8 @@
+.idea
+.libraries
+*.ipr
+*.iml
+*.iws
+build
+deploy
+modules/*/build/*
