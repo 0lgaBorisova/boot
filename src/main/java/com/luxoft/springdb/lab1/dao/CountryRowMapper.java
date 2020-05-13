@@ -17,7 +17,6 @@ public class CountryRowMapper implements RowMapper<Country> {
 		country.setId(resultSet.getInt(ID));
 		country.setName(resultSet.getString(NAME));
 		country.setCodeName(resultSet.getString(CODE_NAME));
-		// TODO: implement it
 		
 		return country;
 	}
