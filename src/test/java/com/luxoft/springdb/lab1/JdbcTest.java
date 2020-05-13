@@ -3,23 +3,24 @@ package com.luxoft.springdb.lab1;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.sql.DataSource;
-
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
-import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.junit4.SpringRunner;
 
-import com.luxoft.springdb.lab1.dao.CountryDao;
+import com.luxoft.springdb.lab1.dao.CountryRepository;
 import com.luxoft.springdb.lab1.model.Country;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase.Replace.NONE;
 
-@SpringBootTest
-@AutoConfigureTestDatabase
+@RunWith(SpringRunner.class)
+@DataJpaTest
+@AutoConfigureTestDatabase(replace = NONE)
 public class JdbcTest {
 	private static final String[][] COUNTRY_INIT_DATA = {{"Australia", "AU"},
 			{"Canada", "CA"}, {"France", "FR"}, {"Hong Kong", "HK"},
@@ -28,27 +29,22 @@ public class JdbcTest {
 			{"Switzerland", "CH"}, {"United Kingdom", "GB"},
 			{"United States", "US"}};
 
-	private CountryDao countryDao;
+	@Autowired
+	private CountryRepository countryRepository;
+
 
 	private List<Country> expectedCountryList = new ArrayList<>();
-	private List<com.luxoft.springdb.lab1.model.Country> expectedCountryListStartsWithA = new ArrayList<>();
+	private List<Country> expectedCountryListStartsWithA = new ArrayList<>();
 	private Country countryWithChangedName = new Country(1, "Russia", "RU");
 
 	@Before
 	public void setUp() throws Exception {
-		DataSource dataSource = new EmbeddedDatabaseBuilder()
-				.setType(EmbeddedDatabaseType.H2)
-				.addScript("classpath:db-schema.sql")
-				.addScript("classpath:db-init.sql")
-				.build();
-		countryDao = new CountryDao();
-		countryDao.setDataSource(dataSource);
 		initExpectedCountryLists();
 	}
 
 	@Test
 	public void testCountryList() {
-		List<Country> countryList = countryDao.getCountryList();
+		List<Country> countryList = countryRepository.findAll();
 		assertNotNull(countryList);
 		assertEquals(expectedCountryList.size(), countryList.size());
 		for (int i = 0; i < expectedCountryList.size(); i++) {
@@ -58,7 +54,7 @@ public class JdbcTest {
 
 	@Test
 	public void testCountryListStartsWithA() {
-		List<Country> countryList = countryDao.getCountryListStartWith("A");
+		List<Country> countryList = countryRepository.findAllByNameStartsWith("A");
 		assertNotNull(countryList);
 		assertEquals(expectedCountryListStartsWithA.size(), countryList.size());
 		for (int i = 0; i < expectedCountryListStartsWithA.size(); i++) {
@@ -67,9 +63,9 @@ public class JdbcTest {
 	}
 
 	@Test
-	public void testCountryChange() {
-		countryDao.updateCountryName("RU", "Russia");
-		assertEquals(countryWithChangedName, countryDao.getCountryByCodeName("RU"));
+	public void testCountryChange() throws Exception {
+		countryRepository.update("Russia", "RU");
+		assertEquals(countryWithChangedName, countryRepository.findByCodeName("RU").get());
 	}
 
 	private void initExpectedCountryLists() {
